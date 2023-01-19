@@ -27,12 +27,13 @@ while True:
 
     start_time = time.time()
     update = requests.get(f'{API_URL}{BOT_TOKEN}/getUpdates?offset={offset + 1}&timeout={timeout}').json()
-
+    print(update)
     if update['result']:
         for res in update['result']:
             offset = res['update_id']
             if 'message' in res:
-                chat_id = res['message']['from']['id']
+                chat_id = res['message']['chat']['id']
+
             elif 'edited_message' in res:
                 break
             do_something()
