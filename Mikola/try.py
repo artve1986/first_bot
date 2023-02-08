@@ -38,6 +38,13 @@ async def com_help(message: Message):
                          спроби я буду підказувати чи більше моє число від твого, чи меньше\n\nДоречі 7 спроб достатньо\
                           щоб ти завжди вигравав)))')
 
+
+# Обробляє команду "/stat"
+@dp.message(Command(commands=['stat']))
+async def process_stat_command(message: Message):
+    await message.answer(f'Всьго ігор зіграно: {user["total_games"]}\n'
+                         f'Виграно: {user["wins"]}')
+
 #Хендлер команди cancel
 @dp.message(Command(commands=['cancel']))
 async def com_cancel(message: Message):
@@ -47,7 +54,8 @@ async def com_cancel(message: Message):
     else:
         await message.answer('Ми й так не граємо')
 
-@dp.message(Text(text=['Так', 'Давай', 'Ок', 'Зіграємо', 'Yes', 'ok', 'play', 'Да'], ignore_case=True))
+@dp.message(Text(text=['Так', 'Давай', 'Ок', 'Зіграємо', 'Yes', 'ok', 'play', 'Да', 'передумав',
+                       'згоден'], ignore_case=True))
 async def func_yes(message: Message):
     if not user['in_game']:
         await message.answer('Оу, тоды давай почнемо, я загадав число выд 1 до 100.\n\n'
@@ -58,8 +66,50 @@ async def func_yes(message: Message):
     else:
         await message.answer('Йой, ми вже граємо, давай числа від 1 до 100')
 
-@dp.message(Text(text=['Ні', 'Нє', 'No']))
+@dp.message(Text(text=['Ні', 'Нє', 'No', 'то'], ignore_case=True))
+async def func_no(message: Message):
+    if not user['in_game']:
+        await message.answer('Ну як хочеш, мені воно теж нафіг треба.\n\nАле якщо передумаєш, напиши.')
+    else:
+        await message.answer('Агов, миж граємо, давай числа від 1 до 100\n\nАле якщо набридло грати введи'
+                             'команду "/cancel"')
 
+
+# Цей хендлер реагує 1 до 100
+@dp.message(lambda x: x.text and x.text.isdigit() and 1 <= int(x.text) <= 100)
+async def num_answer(message: Message):
+    if user['in_game']:
+        if int(message.text) == user['secret_number']:
+            await message.answer('Йой, да ти вгадав!!!\n\n'
+                                 'Давай щє?')
+            user['in_game'] = False
+            user['total_games'] += 1
+            user['wins'] += 1
+        elif int(message.text) > user['secret_number']:
+            await message.answer('Моє число меньше')
+            user['attempts'] -= 1
+        elif int(message.text) < user['secret_number']:
+            await message.answer('Моє число більше')
+            user['attempts'] -= 1
+
+        if user['attempts'] == 0:
+            await message.answer(f'Дідько, не лишилось спроб'
+                                 f'Ти програв:(\n\nМоє число '
+                                 f'було {user["secret_number"]}\n\nНу шо, '
+                                 f'давай щє?')
+            user['in_game'] = False
+            user['total_games'] += 1
+    else:
+        await message.answer('Ти шо, ми щє не граємо! Хочеш?')
+
+# Цей хендлер обробляє усі інші повідомленя
+@dp.message()
+async def other_text_answers(message: Message):
+    if user['in_game']:
+        await message.answer('Ну шо ти мені пишеш?\n\n'
+                             'Давай числа від 1 до 100')
+    else:
+        await message.answer('Йой, легше!! Я не розумію. Давай кращє зіграємо')
 
 
 if __name__ == '__main__':
